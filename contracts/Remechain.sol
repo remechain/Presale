@@ -179,7 +179,6 @@ contract PresaleToken
         return totalSupply;
     }
 
-
     // Default fallback function
     function() payable 
     {
