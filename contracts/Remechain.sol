@@ -12,14 +12,13 @@ contract PresaleToken
     string public constant name = "Remechain Presale Token";
     string public constant symbol = "RMC";
     uint public constant decimals = 18;
-    uint public constant PRICE = 225;  // per 1 Ether
+    uint public constant PRICE = 320;  // per 1 Ether
 
     //  price
-    // Cap is 2667 ETH
-    // 1 eth = 0,00444 presale RMC tokens
-    // 1 RMC = 0,00444eth
+    // Cap is 1875 ETH
+    // 1 RMC = 0,0031eth
     // ETH price ~290$ - 18.08.2017
-    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * 2667 * (1 ether / 1 wei);
+    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * 1875 * (1 ether / 1 wei);
 
     enum State{
        Init,
