@@ -1,4 +1,4 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.13;
 
 // ERC20 token interface is implemented only partially
 // (no SafeMath is used because contract code is very simple)
@@ -43,10 +43,15 @@ contract PresaleToken
 
     mapping (address => uint256) private balance;
 
+struct Purchase {
+      address buyer;
+      uint amount;
+    }
+   Purchase[] purchases;
 /// Modifiers:
-    modifier onlyTokenManager()     { if(msg.sender != tokenManager) throw; _; }
-    modifier onlyCrowdsaleManager() { if(msg.sender != crowdsaleManager) throw; _; }
-    modifier onlyInState(State state){ if(state != currentState) throw; _; }
+    modifier onlyTokenManager()     { require(msg.sender == tokenManager); _;}
+    modifier onlyCrowdsaleManager() { require(msg.sender == crowdsaleManager); _;}
+    modifier onlyInState(State state){ require(state == currentState); _;}
 
 /// Events:
     event LogBuy(address indexed owner, uint value);
@@ -58,8 +63,8 @@ contract PresaleToken
     /// @param _tokenManager Token manager address.
     function PresaleToken(address _tokenManager, address _escrow) 
     {
-        if(_tokenManager==0) throw;
-        if(_escrow==0) throw;
+        require(_tokenManager!=0);
+        require(_escrow!=0);
 
         tokenManager = _tokenManager;
         escrow = _escrow;
@@ -67,13 +72,18 @@ contract PresaleToken
 
     function buyTokens(address _buyer) public payable onlyInState(State.Running)
     {
-        if(msg.value == 0) throw;
+       
+        require(msg.value != 0);
         uint newTokens = msg.value * PRICE;
-
-        if (totalSupply + newTokens > TOKEN_SUPPLY_LIMIT) throw;
+       
+        require(!(totalSupply + newTokens < totalSupply));
+    
+        require(!(totalSupply + newTokens > TOKEN_SUPPLY_LIMIT));
 
         balance[_buyer] += newTokens;
         totalSupply += newTokens;
+
+        purchases[purchases.length++] = Purchase({buyer: _buyer, amount: newTokens});
 
         LogBuy(_buyer, newTokens);
     }
@@ -83,7 +93,7 @@ contract PresaleToken
     function burnTokens(address _owner) public onlyCrowdsaleManager onlyInState(State.Migrating)
     {
         uint tokens = balance[_owner];
-        if(tokens == 0) throw;
+        require(tokens != 0);
 
         balance[_owner] = 0;
         totalSupply -= tokens;
@@ -125,7 +135,7 @@ contract PresaleToken
              || (currentState == State.Migrating && _nextState == State.Migrated
                  && totalSupply == 0);
 
-        if(!canSwitchState) throw;
+        require(canSwitchState);
 
         currentState = _nextState;
         LogStateSwitch(_nextState);
@@ -135,7 +145,7 @@ contract PresaleToken
     {
         if(this.balance > 0) 
         {
-            if(!escrow.send(this.balance)) throw;
+            require(escrow.send(this.balance));
         }
     }
 
@@ -148,7 +158,7 @@ contract PresaleToken
     function setCrowdsaleManager(address _mgr) public onlyTokenManager
     {
         // You can't change crowdsale contract when migration is in progress.
-        if(currentState == State.Migrating) throw;
+        require(currentState != State.Migrating);
 
         crowdsaleManager = _mgr;
     }
@@ -177,7 +187,17 @@ contract PresaleToken
     {
         return totalSupply;
     }
-
+    function getNumberOfPurchases()constant returns(uint) {
+        return purchases.length;
+    }
+    
+    function getPurchaseAddress(uint index)constant returns(address) {
+        return purchases[index].buyer;
+    }
+    
+    function getPurchaseAmount(uint index)constant returns(uint) {
+        return purchases[index].amount;
+    }
     // Default fallback function
     function() payable 
     {
