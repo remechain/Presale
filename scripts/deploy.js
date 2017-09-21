@@ -53,7 +53,7 @@ function deployMain(creator, abi, bytecode) {
 
     // TODO: set these params
     var tokenManager = '0xEB6cbDCBc42C9F02a57930e40Cf3be06828A8bE9';
-    var escrow = '0xEB6cbDCBc42C9F02a57930e40Cf3be06828A8bE9';
+    var escrow = '0x0Db878904a0A6960C8d7701455D3bc2B81B5D6D5';
 
     var escrowAbiConv = '000000000000000000000000EB6cbDCBc42C9F02a57930e40Cf3be06828A8bE9';
     var encoded = '0000000000000000000000000000000000000000000000000000000000000040';
