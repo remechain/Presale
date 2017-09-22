@@ -9,6 +9,12 @@ var BigNumber = require('bignumber.js');
 //assert.notEqual(typeof(process.env.ETH_NODE),'undefined');
 var web3 = new Web3(new Web3.providers.HttpProvider(process.env.ETH_NODE));
 
+const PRICE = 320;
+const BASE = 1000000000000000000;
+const SOFTCAP = PRICE * 667;
+const HARDCAP = PRICE * 1562;
+const ICO_DEADLINE = 1507323600;
+
 var accounts;
 
 var creator;
@@ -48,7 +54,7 @@ function getContractAbi(contractName, cb) {
 function deployContract(data, cb) {
     var file = './contracts/Remechain.sol';
     var contractName = ':PresaleToken';
-
+    
     fs.readFile(file, function (err, result) {
         assert.equal(err, null);
 
@@ -59,14 +65,12 @@ function deployContract(data, cb) {
 
         var output = solc.compile(source, 0); // 1 activates the optimiser
 
-        //console.log('OUTPUT: ');
-        //console.log(output.contracts);
-
         var abi = JSON.parse(output.contracts[contractName].interface);
         var bytecode = output.contracts[contractName].bytecode;
         var tempContract = web3.eth.contract(abi);
 
         var alreadyCalled = false;
+        console.log(11);
 
         tempContract.new(
             creator,
@@ -74,7 +78,7 @@ function deployContract(data, cb) {
             {
                 from: creator,
                 // should not exceed 5000000 for Kovan by default
-                gas: 4995000,
+                gas: 5000000,
                 //gasPrice: 120000000000,
                 data: '0x' + bytecode
             },
@@ -221,9 +225,6 @@ describe('Contracts 0 - Deploy', function () {
                 from: creator,
                 gas: 2900000
             }, function (err, result) {
-                console.log('Err:');
-                console.log(err);
-
                 assert.equal(err, null);
 
                 web3.eth.getTransactionReceipt(result, function (err, r2) {
@@ -265,8 +266,8 @@ describe('Contracts 0 - Deploy', function () {
     it('should get updated Buyers balance', function (done) {
         // 1 - tokens
         var tokens = contract.balanceOf(buyer);
-        assert.equal(tokens, 200000000000000000 * 1000);
-        assert.equal(tokens / 1000000000000000000, 200);   // 200 tokens (converted)
+        assert.equal(tokens, 200000000000000000 * PRICE);
+        assert.equal(tokens / 1000000000000000000, PRICE / 10 * 2);   // 200 tokens (converted)
 
         // 2 - ETHs
         var currentBalance = web3.eth.getBalance(buyer);
@@ -349,9 +350,9 @@ describe('Contracts 0 - Deploy', function () {
 
         web3.eth.sendTransaction(
             {
-                from: buyer,
-                to: contractAddress,
-                value: amount,
+                from:   buyer,
+                to:     contractAddress,
+                value:  amount,
                 gas: 2900000
             }, function (err, result) {
                 assert.equal(err, null);
@@ -368,7 +369,7 @@ describe('Contracts 0 - Deploy', function () {
     it('should get updated Buyers balance', function (done) {
         // 1 - tokens
         var tokens = contract.balanceOf(buyer);
-        assert.equal(tokens / 1000000000000000000, 500);   // 500 tokens (converted)
+        assert.equal(tokens / BASE, PRICE * 0.5);   // 500 tokens (converted)
 
         // 2 - ETHs
         var currentBalance = web3.eth.getBalance(buyer);
@@ -450,15 +451,46 @@ describe('Contracts 0 - Deploy', function () {
 
     it('should get price', function (done) {
         var price = contract.getPrice();
-        assert.equal(price, 1000);
+        assert.equal(price, PRICE);
         done();
     })
 
     it('should get totalSupply', function (done) {
         var total = contract.getTotalSupply();
-        assert.equal(total, 500000000000000000000);
+        assert(total.equals(PRICE * BASE * 0.5));
         done();
     })
+    
+    it('should be right icoDeadline', function (done) {
+        assert(contract.icoDeadline().equals(ICO_DEADLINE));
+        done();
+    })
+    
+    it('should be deploy with icoDeadline params', function (done) {
+        deployContract(':PresaleToken', function (err, res) {
+            assert.equal(err, null);
+            done();
+        });
+    });
+    
+    it('should be right icoDeadline', function (done) {
+        assert(contract.icoDeadline().equals(ICO_DEADLINE));
+        done();
+    })
+    it('should move state', function (done) {
+        contract.setPresaleState(
+            1,
+            {
+                from: creator,
+                gas: 2900000
+            }, function (err, result) {
+                assert.equal(err, null);
+
+                web3.eth.getTransactionReceipt(result, function (err, r2) {
+                    assert.equal(err, null);
+                    done();
+                });
+            }
+        );
+    })
 });
-
-

@@ -18,7 +18,10 @@ contract PresaleToken
     // Cap is 1875 ETH
     // 1 RMC = 0,0031eth
     // ETH price ~290$ - 18.08.2017
-    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * 1875 * (1 ether / 1 wei);
+    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * 1562 * (1 ether / 1 wei);
+    uint public constant SOFTCAP_LIMIT = PRICE * 667 * (1 ether / 1 wei);
+    // 07.10.2017 0:00 MSK
+    uint public icoDeadline = 1507323600;
 
     enum State{
        Init,
@@ -41,7 +44,8 @@ contract PresaleToken
     // Crowdsale manager has exclusive priveleges to burn presale tokens.
     address public crowdsaleManager = 0;
 
-    mapping (address => uint256) private balance;
+    mapping (address => uint256) public balances;
+    mapping (address => uint256) public ethBalances;
 
 struct Purchase {
       address buyer;
@@ -61,7 +65,7 @@ struct Purchase {
 /// Functions:
     /// @dev Constructor
     /// @param _tokenManager Token manager address.
-    function PresaleToken(address _tokenManager, address _escrow) 
+    function PresaleToken(address _tokenManager, address _escrow) public
     {
         require(_tokenManager!=0);
         require(_escrow!=0);
@@ -69,33 +73,56 @@ struct Purchase {
         tokenManager = _tokenManager;
         escrow = _escrow;
     }
+    
+    function isIcoSuccessful() constant public returns(bool successful)  {
+        return totalSupply >= SOFTCAP_LIMIT;
+    }
+    
+    function isIcoOver() constant public returns(bool isOver) {
+        return now >= icoDeadline;
+    }
 
     function buyTokens(address _buyer) public payable onlyInState(State.Running)
     {
-       
+        assert(!isIcoOver());
         require(msg.value != 0);
+        
+        uint ethValue = msg.value;
         uint newTokens = msg.value * PRICE;
        
         require(!(totalSupply + newTokens < totalSupply));
     
         require(!(totalSupply + newTokens > TOKEN_SUPPLY_LIMIT));
-
-        balance[_buyer] += newTokens;
+        
+        ethBalances[_buyer] += ethValue;
+        balances[_buyer] += newTokens;
         totalSupply += newTokens;
+        
+        addAddressToList(_buyer);
 
         purchases[purchases.length++] = Purchase({buyer: _buyer, amount: newTokens});
 
         LogBuy(_buyer, newTokens);
+    }
+    
+    address[] addressList;
+    mapping (address => bool) isAddressInList;
+    function addAddressToList(address _address) private {
+        if (isAddressInList[_address]) {
+            return;
+        }
+        addressList.push(_address);
+        isAddressInList[_address] = true;
     }
 
     /// @dev Returns number of tokens owned by given address.
     /// @param _owner Address of token owner.
     function burnTokens(address _owner) public onlyCrowdsaleManager onlyInState(State.Migrating)
     {
-        uint tokens = balance[_owner];
+        uint tokens = balances[_owner];
         require(tokens != 0);
 
-        balance[_owner] = 0;
+        balances[_owner] = 0;
         totalSupply -= tokens;
 
         LogBurn(_owner, tokens);
@@ -110,9 +137,9 @@ struct Purchase {
 
     /// @dev Returns number of tokens owned by given address.
     /// @param _owner Address of token owner.
-    function balanceOf(address _owner) constant returns (uint256) 
+    function balanceOf(address _owner) public constant returns (uint256) 
     {
-        return balance[_owner];
+        return balances[_owner];
     }
 
     function setPresaleState(State _nextState) public onlyTokenManager
@@ -141,11 +168,46 @@ struct Purchase {
         LogStateSwitch(_nextState);
     }
 
-    function withdrawEther() public onlyTokenManager
+    uint public nextInListToReturn = 0;
+    uint private constant transfersPerIteration = 50;
+    function returnToFunders() private {
+        uint afterLast = nextInListToReturn + transfersPerIteration < addressList.length ? nextInListToReturn + transfersPerIteration : addressList.length; 
+        
+        for (uint i = nextInListToReturn; i < afterLast; i++) {
+            address currentUser = addressList[i];
+            if (ethBalances[currentUser] > 0) {
+                currentUser.transfer(ethBalances[currentUser]);
+                ethBalances[currentUser] = 0;
+            }
+        }
+        
+        nextInListToReturn = afterLast;
+    }
+    function withdrawEther() public
     {
-        if(this.balance > 0) 
-        {
-            require(escrow.send(this.balance));
+        if (isIcoSuccessful()) {
+            if(msg.sender == tokenManager && this.balance > 0) 
+            {
+                escrow.transfer(this.balance);
+            }
+        }
+        else {
+            if (isIcoOver()) {
+                returnToFunders();
+            }
+        }
+    }
+    
+    function returnFunds() public {
+        returnFundsFor(msg.sender);
+    }
+    function returnFundsFor(address _user) public {
+        assert(isIcoOver() && !isIcoSuccessful());
+        assert(msg.sender == _user || msg.sender == tokenManager || msg.sender == address(this));
+        
+        if (ethBalances[_user] > 0) {
+            _user.transfer(ethBalances[_user]);
+            ethBalances[_user] = 0;
         }
     }
 
@@ -163,43 +225,43 @@ struct Purchase {
         crowdsaleManager = _mgr;
     }
 
-    function getTokenManager()constant returns(address)
+    function getTokenManager() public constant returns(address)
     {
         return tokenManager;
     }
 
-    function getCrowdsaleManager()constant returns(address)
+    function getCrowdsaleManager() public constant returns(address)
     {
         return crowdsaleManager;
     }
 
-    function getCurrentState()constant returns(State)
+    function getCurrentState() public constant returns(State)
     {
         return currentState;
     }
 
-    function getPrice()constant returns(uint)
+    function getPrice() public constant returns(uint)
     {
         return PRICE;
     }
 
-    function getTotalSupply()constant returns(uint)
+    function getTotalSupply() public constant returns(uint)
     {
         return totalSupply;
     }
-    function getNumberOfPurchases()constant returns(uint) {
+    function getNumberOfPurchases() public constant returns(uint) {
         return purchases.length;
     }
     
-    function getPurchaseAddress(uint index)constant returns(address) {
+    function getPurchaseAddress(uint index) public constant returns(address) {
         return purchases[index].buyer;
     }
     
-    function getPurchaseAmount(uint index)constant returns(uint) {
+    function getPurchaseAmount(uint index) public constant returns(uint) {
         return purchases[index].amount;
     }
     // Default fallback function
-    function() payable 
+    function()  public payable 
     {
         buyTokens(msg.sender);
     }
