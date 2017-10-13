@@ -16,12 +16,17 @@ contract PresaleToken
 
     //  price
     // Cap is 1875 ETH
-    // 1 RMC = 0,0031eth
-    // ETH price ~290$ - 18.08.2017
-    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * 1562 * (1 ether / 1 wei);
-    uint public constant SOFTCAP_LIMIT = PRICE * 667 * (1 ether / 1 wei);
-    // 07.10.2017 0:00 MSK
-    uint public icoDeadline = 1507323600;
+    // 1 RMC = 0,003125 ETH or 1 ETH = 320 RMC
+    // ETH price ~300$ - 13.10.2017
+	uint public constant HARDCAP_ETH_LIMIT = 1875;
+	uint public constant SOFTCAP_ETH_LIMIT = 500;
+    uint public constant TOKEN_SUPPLY_LIMIT = PRICE * HARDCAP_ETH_LIMIT * (1 ether / 1 wei);
+    uint public constant SOFTCAP_LIMIT = PRICE * SOFTCAP_ETH_LIMIT * (1 ether / 1 wei);
+    
+	// 25.11.2017 17:00 MSK
+    uint public icoDeadline = 1511618400;
+	
+	uint public constant BOUNTY_LIMIT = 220000 * (1 ether / 1 wei);
 
     enum State{
        Init,
@@ -33,6 +38,7 @@ contract PresaleToken
 
     State public currentState = State.Init;
     uint public totalSupply = 0; // amount of tokens already sold
+	uint public bountySupply = 0; // amount of tokens already given as a reward
 
     // Gathered funds can be withdrawn only to escrow's address.
     address public escrow = 0;
@@ -47,11 +53,6 @@ contract PresaleToken
     mapping (address => uint256) public balances;
     mapping (address => uint256) public ethBalances;
 
-struct Purchase {
-      address buyer;
-      uint amount;
-    }
-   Purchase[] purchases;
 /// Modifiers:
     modifier onlyTokenManager()     { require(msg.sender == tokenManager); _;}
     modifier onlyCrowdsaleManager() { require(msg.sender == crowdsaleManager); _;}
@@ -73,6 +74,19 @@ struct Purchase {
         tokenManager = _tokenManager;
         escrow = _escrow;
     }
+	
+	function reward(address _user, uint  _amount) public onlyTokenManager {
+		require(_user != 0x0);
+		
+		assert(bountySupply + _amount >= bountySupply);
+		assert(bountySupply + _amount <= BOUNTY_LIMIT);
+		bountySupply += _amount;
+		
+		assert(balances[_user] + _amount >= balances[_user]);
+		balances[_user] += _amount;
+		
+		addAddressToList(_user);
+	}
     
     function isIcoSuccessful() constant public returns(bool successful)  {
         return totalSupply >= SOFTCAP_LIMIT;
@@ -90,22 +104,21 @@ struct Purchase {
         uint ethValue = msg.value;
         uint newTokens = msg.value * PRICE;
        
-        require(!(totalSupply + newTokens < totalSupply));
-    
         require(!(totalSupply + newTokens > TOKEN_SUPPLY_LIMIT));
-        
+        assert(ethBalances[_buyer] + ethValue >= ethBalances[_buyer]);
+		assert(balances[_buyer] + newTokens >= balances[_buyer]);
+		assert(totalSupply + newTokens >= totalSupply);
+		
         ethBalances[_buyer] += ethValue;
         balances[_buyer] += newTokens;
         totalSupply += newTokens;
         
         addAddressToList(_buyer);
 
-        purchases[purchases.length++] = Purchase({buyer: _buyer, amount: newTokens});
-
         LogBuy(_buyer, newTokens);
     }
     
-    address[] addressList;
+    address[] public addressList;
     mapping (address => bool) isAddressInList;
     function addAddressToList(address _address) private {
         if (isAddressInList[_address]) {
@@ -203,7 +216,7 @@ struct Purchase {
     }
     function returnFundsFor(address _user) public {
         assert(isIcoOver() && !isIcoSuccessful());
-        assert(msg.sender == _user || msg.sender == tokenManager || msg.sender == address(this));
+        assert(msg.sender == tokenManager || msg.sender == address(this));
         
         if (ethBalances[_user] > 0) {
             _user.transfer(ethBalances[_user]);
@@ -211,7 +224,7 @@ struct Purchase {
         }
     }
 
-/// Setters/getters
+/// Setters
     function setTokenManager(address _mgr) public onlyTokenManager
     {
         tokenManager = _mgr;
@@ -225,41 +238,6 @@ struct Purchase {
         crowdsaleManager = _mgr;
     }
 
-    function getTokenManager() public constant returns(address)
-    {
-        return tokenManager;
-    }
-
-    function getCrowdsaleManager() public constant returns(address)
-    {
-        return crowdsaleManager;
-    }
-
-    function getCurrentState() public constant returns(State)
-    {
-        return currentState;
-    }
-
-    function getPrice() public constant returns(uint)
-    {
-        return PRICE;
-    }
-
-    function getTotalSupply() public constant returns(uint)
-    {
-        return totalSupply;
-    }
-    function getNumberOfPurchases() public constant returns(uint) {
-        return purchases.length;
-    }
-    
-    function getPurchaseAddress(uint index) public constant returns(address) {
-        return purchases[index].buyer;
-    }
-    
-    function getPurchaseAmount(uint index) public constant returns(uint) {
-        return purchases[index].amount;
-    }
     // Default fallback function
     function()  public payable 
     {
