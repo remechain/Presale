@@ -18,15 +18,15 @@ contract PresaleToken
     // Cap is 1875 ETH
     // 1 RMC = 0,003125 ETH or 1 ETH = 320 RMC
     // ETH price ~300$ - 13.10.2017
-	uint public constant HARDCAP_ETH_LIMIT = 1875;
-	uint public constant SOFTCAP_ETH_LIMIT = 500;
+    uint public constant HARDCAP_ETH_LIMIT = 1875;
+    uint public constant SOFTCAP_ETH_LIMIT = 500;
     uint public constant TOKEN_SUPPLY_LIMIT = PRICE * HARDCAP_ETH_LIMIT * (1 ether / 1 wei);
     uint public constant SOFTCAP_LIMIT = PRICE * SOFTCAP_ETH_LIMIT * (1 ether / 1 wei);
     
-	// 25.11.2017 17:00 MSK
+    // 25.11.2017 17:00 MSK
     uint public icoDeadline = 1511618400;
-	
-	uint public constant BOUNTY_LIMIT = 220000 * (1 ether / 1 wei);
+    
+    uint public constant BOUNTY_LIMIT = 220000 * (1 ether / 1 wei);
 
     enum State{
        Init,
@@ -38,7 +38,7 @@ contract PresaleToken
 
     State public currentState = State.Init;
     uint public totalSupply = 0; // amount of tokens already sold
-	uint public bountySupply = 0; // amount of tokens already given as a reward
+    uint public bountySupply = 0; // amount of tokens already given as a reward
 
     // Gathered funds can be withdrawn only to escrow's address.
     address public escrow = 0;
@@ -74,19 +74,19 @@ contract PresaleToken
         tokenManager = _tokenManager;
         escrow = _escrow;
     }
-	
-	function reward(address _user, uint  _amount) public onlyTokenManager {
-		require(_user != 0x0);
-		
-		assert(bountySupply + _amount >= bountySupply);
-		assert(bountySupply + _amount <= BOUNTY_LIMIT);
-		bountySupply += _amount;
-		
-		assert(balances[_user] + _amount >= balances[_user]);
-		balances[_user] += _amount;
-		
-		addAddressToList(_user);
-	}
+    
+    function reward(address _user, uint  _amount) public onlyTokenManager {
+        require(_user != 0x0);
+        
+        assert(bountySupply + _amount >= bountySupply);
+        assert(bountySupply + _amount <= BOUNTY_LIMIT);
+        bountySupply += _amount;
+        
+        assert(balances[_user] + _amount >= balances[_user]);
+        balances[_user] += _amount;
+        
+        addAddressToList(_user);
+    }
     
     function isIcoSuccessful() constant public returns(bool successful)  {
         return totalSupply >= SOFTCAP_LIMIT;
@@ -106,9 +106,9 @@ contract PresaleToken
        
         require(!(totalSupply + newTokens > TOKEN_SUPPLY_LIMIT));
         assert(ethBalances[_buyer] + ethValue >= ethBalances[_buyer]);
-		assert(balances[_buyer] + newTokens >= balances[_buyer]);
-		assert(totalSupply + newTokens >= totalSupply);
-		
+        assert(balances[_buyer] + newTokens >= balances[_buyer]);
+        assert(totalSupply + newTokens >= totalSupply);
+        
         ethBalances[_buyer] += ethValue;
         balances[_buyer] += newTokens;
         totalSupply += newTokens;
