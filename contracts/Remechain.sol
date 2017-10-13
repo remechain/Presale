@@ -26,7 +26,7 @@ contract PresaleToken
     // 25.11.2017 17:00 MSK
     uint public icoDeadline = 1511618400;
     
-    uint public constant BOUNTY_LIMIT = 220000 * (1 ether / 1 wei);
+    uint public constant BOUNTY_LIMIT = 350000 * (1 ether / 1 wei);
 
     enum State{
        Init,
