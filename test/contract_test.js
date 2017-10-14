@@ -11,9 +11,9 @@ var web3 = new Web3(new Web3.providers.HttpProvider(process.env.ETH_NODE));
 
 const PRICE = 320;
 const BASE = 1000000000000000000;
-const SOFTCAP = PRICE * 667;
-const HARDCAP = PRICE * 1562;
-const ICO_DEADLINE = 1507323600;
+const SOFTCAP = PRICE * 500;
+const HARDCAP = PRICE * 1875;
+const ICO_DEADLINE = 1511618400;
 
 var accounts;
 
@@ -170,7 +170,7 @@ describe('Contracts 0 - Deploy', function () {
     });
 
     it('should get initial state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 0);
         done();
     });
@@ -207,13 +207,13 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get token manager', function (done) {
-        var m = contract.getTokenManager();
+        var m = contract.tokenManager();
         assert.equal(m, creator);
         done();
     });
 
     it('should get crowdsale manager', function (done) {
-        var m = contract.getCrowdsaleManager();
+        var m = contract.crowdsaleManager();
         assert.equal(m, 0);
         done();
     });
@@ -236,7 +236,7 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get updated state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 1);
         done();
     })
@@ -298,7 +298,7 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get updated state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 2);
         done();
     })
@@ -339,7 +339,7 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get updated state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 1);
         done();
     })
@@ -397,7 +397,7 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get same state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 1);
         done();
     })
@@ -421,7 +421,7 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get updated crowdsale manager', function (done) {
-        var m = contract.getCrowdsaleManager();
+        var m = contract.crowdsaleManager();
         assert.equal(m, creator);
         done();
     });
@@ -444,19 +444,19 @@ describe('Contracts 0 - Deploy', function () {
     })
 
     it('should get same state', function (done) {
-        var state = contract.getCurrentState();
+        var state = contract.currentState();
         assert.equal(state, 3);
         done();
     })
 
     it('should get price', function (done) {
-        var price = contract.getPrice();
+        var price = contract.PRICE();
         assert.equal(price, PRICE);
         done();
     })
 
     it('should get totalSupply', function (done) {
-        var total = contract.getTotalSupply();
+        var total = contract.totalSupply();
         assert(total.equals(PRICE * BASE * 0.5));
         done();
     })
