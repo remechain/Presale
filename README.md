@@ -27,7 +27,7 @@ Install dependencies with Node JS
 ```
 npm install 
 ```
-Install testrpc
+Install testrpc with administrator rights
 ```
 npm install -g ethereumjs-testrpc
 ```
