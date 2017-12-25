@@ -160,7 +160,7 @@ contract PreIco is SafeMath {
     
     /// @dev Returns token balance of user. 1 token = 1/10^18 RMC
     /// @param _user Address of user
-    function balanceOf(address _user) public returns(uint balance) {
+    function balanceOf(address _user) public constant returns(uint balance) {
         return balances[_user];
     }
     
