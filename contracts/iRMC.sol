@@ -69,10 +69,10 @@ contract PreIco is SafeMath {
     uint public tokensSupplied = 0;
     // amount of supplied bounty reward
     uint public bountySupplied = 0;
-    // Soft capacity = 6250 RMC
-    uint public constant SOFT_CAPACITY = 6250 * BASE;
-    // Hard capacity = 18750 RMC
-    uint public constant TOKENS_SUPPLY = 18750 * BASE;
+    // Soft capacity = 6250 ETH
+    uint public constant SOFT_CAPACITY = 2000000 * BASE;
+    // Hard capacity = 18750 ETH
+    uint public constant TOKENS_SUPPLY = 6000000 * BASE;
     // Amount of bounty reward
     uint public constant BOUNTY_SUPPLY = 350000 * BASE;
     // Total supply
@@ -80,8 +80,8 @@ contract PreIco is SafeMath {
 
     // 1 RMC = 0.003125 ETH for  600 000 000 RMC
 
-    uint public constant TOKEN_PRICE = 3000000000000000;
-    uint tokenAmount1 = 600000000 * BASE;
+    uint public constant TOKEN_PRICE = 3125000000000000;
+    uint tokenAmount1 = 6000000 * BASE;
 
     uint tokenPriceMultiply1 = 1;
     uint tokenPriceDivide1 = 1;
